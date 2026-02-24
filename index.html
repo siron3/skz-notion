@@ -679,14 +679,14 @@ async function loadData() {
   setLoading(true);
   try {
     // イベント取得
-    const { data: evData, error: evErr } = await supabase
+    const { data: evData, error: evErr } = await db
       .from('skz_events')
       .select('*')
       .order('start_date', { ascending: true });
     if (evErr) throw evErr;
 
     // タスク取得
-    const { data: taskData, error: taskErr } = await supabase
+    const { data: taskData, error: taskErr } = await db
       .from('skz_tasks')
       .select('*')
       .order('created_at', { ascending: true });

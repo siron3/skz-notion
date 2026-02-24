@@ -14,14 +14,14 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* === SKZ THEME (default) === */
-    --theme-primary:    #E8365D;
-    --theme-soft:       #F28099;
-    --theme-pale:       #FAD0D8;
-    --theme-ultra:      #FDF0F2;
-    --theme-grad-start: #1A1A1A;
-    --theme-grad-mid:   #2E2E2E;
-    --theme-grad-end:   #E8365D;
+    /* === SKZ THEME (水色×グレー) === */
+    --theme-primary:    #0EA5E9;
+    --theme-soft:       #38BDF8;
+    --theme-pale:       #BAE6FD;
+    --theme-ultra:      #F0F9FF;
+    --theme-grad-start: #374151;
+    --theme-grad-mid:   #4B5563;
+    --theme-grad-end:   #0EA5E9;
 
     --gray-dark: #2E2E2E;
     --gray-mid: #7A7A7A;
@@ -75,17 +75,6 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     backdrop-filter:blur(4px); transition:all .2s; z-index:1;
   }
   .add-btn:hover { background:rgba(255,255,255,0.38); transform:translateY(-1px); }
-
-  /* テーマ切替ボタン */
-  .theme-btn {
-    background:rgba(255,255,255,0.15); border:1.5px solid rgba(255,255,255,.35);
-    color:rgba(255,255,255,.85); font-family:'Nunito',sans-serif; font-weight:700;
-    font-size:10px; padding:4px 9px; border-radius:20px; cursor:pointer;
-    transition:all .2s; display:flex; align-items:center; gap:4px;
-  }
-  .theme-btn:hover { background:rgba(255,255,255,.28); }
-  .theme-btn.active { background:rgba(255,255,255,.32); border-color:rgba(255,255,255,.7); color:white; }
-  .theme-swatch { width:8px; height:8px; border-radius:50%; display:inline-block; border:1.5px solid rgba(255,255,255,.5); }
 
   /* ===== CALENDAR ===== */
   .cal-panel {
@@ -491,15 +480,6 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     </div>
     <div style="display:flex;align-items:center;gap:8px;z-index:1">
       <!-- テーマ切替 -->
-      <div style="display:flex;gap:4px;align-items:center">
-        <span style="font-size:10px;color:rgba(255,255,255,.75);font-weight:700;margin-right:2px">🎨</span>
-        <button class="theme-btn active" id="theme-skz" title="SKZ（黒×赤）">
-          <span class="theme-swatch" style="background:#E8365D"></span>SKZ
-        </button>
-        <button class="theme-btn" id="theme-custom-btn" title="カスタムカラー">
-          <span class="theme-swatch" id="custom-swatch" style="background:#aaaaaa"></span>カスタム
-        </button>
-      </div>
       <button class="add-btn" id="btn-add-event">＋ イベント追加</button>
     </div>
   </div>
@@ -553,52 +533,6 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       <button class="btn-cancel" id="btn-confirm-cancel">やっぱやめる</button>
       <button id="btn-confirm-delete" style="background:#EF4444;border:none;color:white;font-family:'Nunito',sans-serif;font-weight:800;font-size:12px;padding:8px 20px;border-radius:9px;cursor:pointer;">削除する</button>
     </div>
-  </div>
-</div>
-
-<!-- MODAL -->
-<div id="color-picker-popup" style="display:none;position:fixed;top:72px;right:16px;z-index:300;
-  background:white;border-radius:16px;padding:18px;width:240px;
-  box-shadow:0 8px 32px rgba(0,0,0,.18);border:1.5px solid #eee;
-  animation:mIn .2s ease;">
-  <div style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;color:#2E2E2E;margin-bottom:12px">🎨 カスタムテーマ</div>
-  <div style="display:flex;flex-direction:column;gap:10px">
-    <div>
-      <label style="font-size:10px;font-weight:700;color:#7A7A7A;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:4px">メインカラー</label>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input type="color" id="cp-primary" value="#FF6B9D"
-          style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px;background:#f4f4f4">
-        <input type="text" id="cp-primary-text" value="#FF6B9D"
-          style="flex:1;border:1.5px solid #ddd;border-radius:8px;padding:6px 10px;
-          font-family:'DM Sans',sans-serif;font-size:13px;outline:none;text-transform:uppercase"
-          placeholder="#FF6B9D">
-      </div>
-    </div>
-    <div>
-      <label style="font-size:10px;font-weight:700;color:#7A7A7A;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:4px">サブカラー（任意）</label>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input type="color" id="cp-secondary" value="#FFB3CC"
-          style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px;background:#f4f4f4"
-          oninput="previewCustomTheme()">
-        <input type="text" id="cp-secondary-text" value="#FFB3CC"
-          style="flex:1;border:1.5px solid #ddd;border-radius:8px;padding:6px 10px;
-          font-family:'DM Sans',sans-serif;font-size:13px;outline:none;text-transform:uppercase"
-          oninput="syncColorInput('secondary')" placeholder="#FFB3CC">
-      </div>
-    </div>
-    <div style="font-size:10px;color:#aaa;margin-top:-4px">サブカラーを省略するとメインカラーから自動生成するよ</div>
-  </div>
-  <div style="display:flex;gap:8px;margin-top:14px">
-    <button id="btn-cp-cancel"
-      style="flex:1;background:#f4f4f4;border:none;border-radius:8px;padding:8px;
-      font-family:'Nunito',sans-serif;font-weight:700;font-size:12px;color:#7A7A7A;cursor:pointer">
-      キャンセル
-    </button>
-    <button id="btn-cp-apply"
-      style="flex:1;background:var(--theme-primary);border:none;border-radius:8px;padding:8px;
-      font-family:'Nunito',sans-serif;font-weight:800;font-size:12px;color:white;cursor:pointer;transition:opacity .2s">
-      適用する
-    </button>
   </div>
 </div>
 
@@ -1213,13 +1147,10 @@ function switchTab(tab) {
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
-  setTheme('skz');
   loadData();
 
   // ヘッダー
   document.getElementById('btn-add-event').addEventListener('click', openModal);
-  document.getElementById('theme-skz').addEventListener('click', () => setTheme('skz'));
-  document.getElementById('theme-custom-btn').addEventListener('click', toggleColorPicker);
 
   // カレンダーナビ
   document.getElementById('btn-prev-month').addEventListener('click', () => changeMonth(-1));
@@ -1236,14 +1167,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-confirm-cancel').addEventListener('click', closeConfirm);
   document.getElementById('btn-confirm-delete').addEventListener('click', confirmDelete);
 
-  // カラーピッカー
-  document.getElementById('btn-cp-cancel').addEventListener('click', closeColorPicker);
-  document.getElementById('btn-cp-apply').addEventListener('click', applyCustomTheme);
-  document.getElementById('cp-primary').addEventListener('input', previewCustomTheme);
-  document.getElementById('cp-secondary').addEventListener('input', previewCustomTheme);
-  document.getElementById('cp-primary-text').addEventListener('input', () => syncColorInput('primary'));
-  document.getElementById('cp-secondary-text').addEventListener('input', () => syncColorInput('secondary'));
-
   // カテゴリ選択（委任）
   document.querySelector('.cat-grid').addEventListener('click', e => {
     const opt = e.target.closest('.cat-opt');
@@ -1251,91 +1174,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// ===== THEME =====
-const THEMES = {
-  skz: {
-    '--theme-primary':    '#E8365D',
-    '--theme-soft':       '#F28099',
-    '--theme-pale':       '#FAD0D8',
-    '--theme-ultra':      '#FDF0F2',
-    '--theme-grad-start': '#1A1A1A',
-    '--theme-grad-mid':   '#2E2E2E',
-    '--theme-grad-end':   '#E8365D',
-  },
-};
-
-function setTheme(name) {
-  const theme = THEMES[name];
-  if (!theme) return;
-  const root = document.documentElement;
-  Object.entries(theme).forEach(([k,v]) => root.style.setProperty(k, v));
-  document.querySelectorAll('.theme-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.id === `theme-${name}`);
-  });
-}
-
-// ===== CUSTOM THEME =====
-function toggleColorPicker() {
-  const popup = document.getElementById('color-picker-popup');
-  popup.style.display = popup.style.display === 'none' ? 'block' : 'none';
-}
-function closeColorPicker() {
-  document.getElementById('color-picker-popup').style.display = 'none';
-}
-
-function syncColorInput(type) {
-  // テキスト入力 → カラーピッカーに同期
-  const text = document.getElementById(`cp-${type}-text`).value.trim();
-  if (/^#[0-9A-Fa-f]{6}$/.test(text)) {
-    document.getElementById(`cp-${type}`).value = text;
-    previewCustomTheme();
-  }
-}
-
-function previewCustomTheme() {
-  // カラーピッカー → テキストに同期
-  const primary = document.getElementById('cp-primary').value;
-  const secondary = document.getElementById('cp-secondary').value;
-  document.getElementById('cp-primary-text').value = primary.toUpperCase();
-  document.getElementById('cp-secondary-text').value = secondary.toUpperCase();
-  document.getElementById('custom-swatch').style.background = primary;
-}
-
-function hexToRgb(hex) {
-  const r = parseInt(hex.slice(1,3),16);
-  const g = parseInt(hex.slice(3,5),16);
-  const b = parseInt(hex.slice(5,7),16);
-  return {r,g,b};
-}
-
-function lighten(hex, amount) {
-  // amount: 0〜1、白に近づける
-  const {r,g,b} = hexToRgb(hex);
-  const lr = Math.round(r + (255-r)*amount);
-  const lg = Math.round(g + (255-g)*amount);
-  const lb = Math.round(b + (255-b)*amount);
-  return `#${lr.toString(16).padStart(2,'0')}${lg.toString(16).padStart(2,'0')}${lb.toString(16).padStart(2,'0')}`;
-}
-
-function applyCustomTheme() {
-  const primary = document.getElementById('cp-primary').value;
-  const secInput = document.getElementById('cp-secondary-text').value.trim();
-  const secondary = /^#[0-9A-Fa-f]{6}$/.test(secInput) ? secInput : lighten(primary, 0.4);
-
-  const root = document.documentElement;
-  root.style.setProperty('--theme-primary',    primary);
-  root.style.setProperty('--theme-soft',       lighten(primary, 0.4));
-  root.style.setProperty('--theme-pale',       lighten(primary, 0.7));
-  root.style.setProperty('--theme-ultra',      lighten(primary, 0.9));
-  root.style.setProperty('--theme-grad-start', primary);
-  root.style.setProperty('--theme-grad-mid',   lighten(primary, 0.2));
-  root.style.setProperty('--theme-grad-end',   secondary);
-
-  document.querySelectorAll('.theme-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.id === 'theme-custom-btn');
-  });
-  closeColorPicker();
-}
 </script>
 </body>
 </html>

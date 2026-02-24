@@ -487,31 +487,31 @@
       <!-- テーマ切替 -->
       <div style="display:flex;gap:4px;align-items:center">
         <span style="font-size:10px;color:rgba(255,255,255,.75);font-weight:700;margin-right:2px">🎨</span>
-        <button class="theme-btn active" id="theme-skz" onclick="setTheme('skz')" title="SKZ（黒×赤）">
+        <button class="theme-btn active" id="theme-skz" title="SKZ（黒×赤）">
           <span class="theme-swatch" style="background:#E8365D"></span>SKZ
         </button>
-        <button class="theme-btn" id="theme-custom-btn" onclick="toggleColorPicker()" title="カスタムカラー">
+        <button class="theme-btn" id="theme-custom-btn" title="カスタムカラー">
           <span class="theme-swatch" id="custom-swatch" style="background:#aaaaaa"></span>カスタム
         </button>
       </div>
-      <button class="add-btn" onclick="openModal()">＋ イベント追加</button>
+      <button class="add-btn" id="btn-add-event">＋ イベント追加</button>
     </div>
   </div>
 
   <!-- スマホ用タブ切替 -->
   <div class="mobile-tabs">
-    <button class="mobile-tab active" id="tab-cal" onclick="switchTab('cal')">📅 カレンダー</button>
-    <button class="mobile-tab" id="tab-list" onclick="switchTab('list')">📋 スケジュール</button>
+    <button class="mobile-tab active" id="tab-cal">📅 カレンダー</button>
+    <button class="mobile-tab" id="tab-list">📋 スケジュール</button>
   </div>
 
   <div class="main show-cal" id="main-grid">
     <!-- CALENDAR -->
     <div class="cal-panel">
       <div class="cal-nav">
-        <button class="cal-btn" onclick="changeMonth(-1)">‹</button>
+        <button class="cal-btn" id="btn-prev-month">‹</button>
         <div class="cal-month" id="cal-month"></div>
-        <button class="cal-btn" onclick="changeMonth(1)">›</button>
-        <button class="today-btn" onclick="goToday()">今日</button>
+        <button class="cal-btn" id="btn-next-month">›</button>
+        <button class="today-btn" id="btn-today">今日</button>
       </div>
       <div class="cal-grid" id="cal-grid"></div>
       <div class="legend">
@@ -538,14 +538,14 @@
 </div>
 
 <!-- 削除確認モーダル -->
-<div class="overlay" id="confirm-overlay" onclick="if(event.target.id==='confirm-overlay')closeConfirm()">
+<div class="overlay" id="confirm-overlay">
   <div class="modal" style="max-width:320px;text-align:center">
     <div style="font-size:32px;margin-bottom:12px">🗑</div>
     <div style="font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;margin-bottom:6px">イベントを削除する？</div>
     <div style="font-size:12px;color:var(--gray-mid);margin-bottom:20px">「<span id="confirm-name"></span>」を削除するよ。この操作は取り消せないよ！</div>
     <div style="display:flex;gap:8px;justify-content:center">
-      <button class="btn-cancel" onclick="closeConfirm()">やっぱやめる</button>
-      <button style="background:#EF4444;border:none;color:white;font-family:'Nunito',sans-serif;font-weight:800;font-size:12px;padding:8px 20px;border-radius:9px;cursor:pointer;" onclick="confirmDelete()">削除する</button>
+      <button class="btn-cancel" id="btn-confirm-cancel">やっぱやめる</button>
+      <button id="btn-confirm-delete" style="background:#EF4444;border:none;color:white;font-family:'Nunito',sans-serif;font-weight:800;font-size:12px;padding:8px 20px;border-radius:9px;cursor:pointer;">削除する</button>
     </div>
   </div>
 </div>
@@ -561,12 +561,11 @@
       <label style="font-size:10px;font-weight:700;color:#7A7A7A;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:4px">メインカラー</label>
       <div style="display:flex;gap:8px;align-items:center">
         <input type="color" id="cp-primary" value="#FF6B9D"
-          style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px;background:#f4f4f4"
-          oninput="previewCustomTheme()">
+          style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px;background:#f4f4f4">
         <input type="text" id="cp-primary-text" value="#FF6B9D"
           style="flex:1;border:1.5px solid #ddd;border-radius:8px;padding:6px 10px;
           font-family:'DM Sans',sans-serif;font-size:13px;outline:none;text-transform:uppercase"
-          oninput="syncColorInput('primary')" placeholder="#FF6B9D">
+          placeholder="#FF6B9D">
       </div>
     </div>
     <div>
@@ -584,22 +583,21 @@
     <div style="font-size:10px;color:#aaa;margin-top:-4px">サブカラーを省略するとメインカラーから自動生成するよ</div>
   </div>
   <div style="display:flex;gap:8px;margin-top:14px">
-    <button onclick="closeColorPicker()"
+    <button id="btn-cp-cancel"
       style="flex:1;background:#f4f4f4;border:none;border-radius:8px;padding:8px;
       font-family:'Nunito',sans-serif;font-weight:700;font-size:12px;color:#7A7A7A;cursor:pointer">
       キャンセル
     </button>
-    <button onclick="applyCustomTheme()"
+    <button id="btn-cp-apply"
       style="flex:1;background:var(--theme-primary);border:none;border-radius:8px;padding:8px;
-      font-family:'Nunito',sans-serif;font-weight:800;font-size:12px;color:white;cursor:pointer;transition:opacity .2s"
-      onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+      font-family:'Nunito',sans-serif;font-weight:800;font-size:12px;color:white;cursor:pointer;transition:opacity .2s">
       適用する
     </button>
   </div>
 </div>
 
 <!-- MODAL -->
-<div class="overlay" id="overlay" onclick="closeBg(event)">
+<div class="overlay" id="overlay">
   <div class="modal">
     <div class="modal-title" id="modal-title">🧭 イベントを追加</div>
     <input type="hidden" id="f-edit-id" value="">
@@ -610,13 +608,13 @@
     <div class="fg">
       <label class="fl">カテゴリ</label>
       <div class="cat-grid">
-        <div class="cat-opt live" data-cat="live" onclick="selCat('live')">🎤 ライブ</div>
-        <div class="cat-opt release" data-cat="release" onclick="selCat('release')">💿 リリース</div>
-        <div class="cat-opt media" data-cat="media" onclick="selCat('media')">📺 配信/メディア</div>
-        <div class="cat-opt goods" data-cat="goods" onclick="selCat('goods')">🛍 グッズ</div>
-        <div class="cat-opt apply" data-cat="apply" onclick="selCat('apply')">🎫 申込/手配</div>
-        <div class="cat-opt penmet" data-cat="penmet" onclick="selCat('penmet')">💌 ペンミ</div>
-        <div class="cat-opt other" data-cat="other" onclick="selCat('other')">✨ その他</div>
+        <div class="cat-opt live" data-cat="live">🎤 ライブ</div>
+        <div class="cat-opt release" data-cat="release">💿 リリース</div>
+        <div class="cat-opt media" data-cat="media">📺 配信/メディア</div>
+        <div class="cat-opt goods" data-cat="goods">🛍 グッズ</div>
+        <div class="cat-opt apply" data-cat="apply">🎫 申込/手配</div>
+        <div class="cat-opt penmet" data-cat="penmet">💌 ペンミ</div>
+        <div class="cat-opt other" data-cat="other">✨ その他</div>
       </div>
     </div>
     <div class="frow">
@@ -629,8 +627,8 @@
     </div>
     <div class="fg"><label class="fl">メモ（任意）</label><input class="fi" id="f-memo" type="text" placeholder="例: チケット当選！"></div>
     <div class="m-actions">
-      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
-      <button class="btn-save" id="btn-save-label" onclick="saveEvent()">保存する</button>
+      <button class="btn-cancel" id="btn-modal-cancel">キャンセル</button>
+      <button class="btn-save" id="btn-save-label">保存する</button>
     </div>
   </div>
 </div>
@@ -1189,8 +1187,44 @@ function switchTab(tab) {
 }
 
 // ===== INIT =====
-loadData();
-setTheme('skz');
+document.addEventListener('DOMContentLoaded', () => {
+  setTheme('skz');
+  loadData();
+
+  // ヘッダー
+  document.getElementById('btn-add-event').addEventListener('click', openModal);
+  document.getElementById('theme-skz').addEventListener('click', () => setTheme('skz'));
+  document.getElementById('theme-custom-btn').addEventListener('click', toggleColorPicker);
+
+  // カレンダーナビ
+  document.getElementById('btn-prev-month').addEventListener('click', () => changeMonth(-1));
+  document.getElementById('btn-next-month').addEventListener('click', () => changeMonth(1));
+  document.getElementById('btn-today').addEventListener('click', goToday);
+
+  // モーダル
+  document.getElementById('overlay').addEventListener('click', e => { if(e.target.id==='overlay') closeModal(); });
+  document.getElementById('btn-modal-cancel').addEventListener('click', closeModal);
+  document.getElementById('btn-save-label').addEventListener('click', saveEvent);
+
+  // 削除確認モーダル
+  document.getElementById('confirm-overlay').addEventListener('click', e => { if(e.target.id==='confirm-overlay') closeConfirm(); });
+  document.getElementById('btn-confirm-cancel').addEventListener('click', closeConfirm);
+  document.getElementById('btn-confirm-delete').addEventListener('click', confirmDelete);
+
+  // カラーピッカー
+  document.getElementById('btn-cp-cancel').addEventListener('click', closeColorPicker);
+  document.getElementById('btn-cp-apply').addEventListener('click', applyCustomTheme);
+  document.getElementById('cp-primary').addEventListener('input', previewCustomTheme);
+  document.getElementById('cp-secondary').addEventListener('input', previewCustomTheme);
+  document.getElementById('cp-primary-text').addEventListener('input', () => syncColorInput('primary'));
+  document.getElementById('cp-secondary-text').addEventListener('input', () => syncColorInput('secondary'));
+
+  // カテゴリ選択（委任）
+  document.querySelector('.cat-grid').addEventListener('click', e => {
+    const opt = e.target.closest('.cat-opt');
+    if (opt) selCat(opt.dataset.cat);
+  });
+});
 
 // ===== THEME =====
 const THEMES = {

@@ -980,7 +980,6 @@ function makeEventCard(ev) {
         ${TASK_PRESETS.map(p=>`<button class="task-preset js-add-preset" data-text="${p}">${p}</button>`).join('')}
       </div>
       <div class="task-list" id="tasklist-${ev.id}">
-        ${tasks.map(t=>taskItemHTML(ev.id,t)).join('')}
       </div>
       <div class="task-add-row">
         <input class="task-input js-task-input" type="text" placeholder="タスクを自由入力…">
@@ -1003,15 +1002,26 @@ function makeEventCard(ev) {
   const taskInput = card.querySelector('.js-task-input');
   taskInput.addEventListener('keydown', e => { if(e.key==='Enter') addFreeTask(eid, taskInput); });
   card.querySelector('.js-add-free-task').addEventListener('click', () => addFreeTask(eid, taskInput));
+
+  // タスクをDOMで追加（リスナー付き）
+  const taskList = card.querySelector(`#tasklist-${ev.id}`);
+  tasks.forEach(t => taskList.appendChild(makeTaskItem(eid, t)));
+
   return card;
 }
 
-function taskItemHTML(eid, t) {
-  return `<div class="task-item${t.done?' done':''}" id="ti-${t.id}" data-eid="${eid}" data-tid="${t.id}">
-    <div class="task-check${t.done?' checked':''} js-toggle-task"></div>
+function makeTaskItem(eid, t) {
+  const div = document.createElement('div');
+  div.className = `task-item${t.done?' done':''}`;
+  div.id = `ti-${t.id}`;
+  div.innerHTML = `
+    <div class="task-check${t.done?' checked':''}"></div>
     <div class="task-text">${t.text}</div>
-    <button class="task-del js-del-task">×</button>
-  </div>`;
+    <button class="task-del">×</button>
+  `;
+  div.querySelector('.task-check').addEventListener('click', () => toggleTask(eid, t.id));
+  div.querySelector('.task-del').addEventListener('click', () => delTask(eid, t.id));
+  return div;
 }
 
 function toggleTasks(e, eid) {
@@ -1058,8 +1068,8 @@ async function addPreset(e, eid, text) {
   } catch(e) { console.error(e); showToast('追加に失敗したよ😢','error'); }
 }
 
-async function addFreeTask(eid) {
-  const input = document.getElementById(`tinput-${eid}`);
+async function addFreeTask(eid, input) {
+  if (!input) return;
   const text = input.value.trim();
   if (!text) return;
   const ev = events.find(e=>e.id===eid);

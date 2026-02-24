@@ -942,15 +942,15 @@ function makeEventCard(ev) {
 
   let taskSummaryHTML = '';
   if (tasks.length===0) {
-    taskSummaryHTML = `<span class="task-summary no-tasks" onclick="toggleTasks(event,${ev.id})">＋ タスク追加</span>`;
+    taskSummaryHTML = `<span class="task-summary no-tasks js-toggle-tasks">＋ タスク追加</span>`;
   } else if (remaining===0) {
-    taskSummaryHTML = `<span class="task-summary all-done" onclick="toggleTasks(event,${ev.id})">✓ すべて完了！</span>`;
+    taskSummaryHTML = `<span class="task-summary all-done js-toggle-tasks">✓ すべて完了！</span>`;
   } else {
-    taskSummaryHTML = `<span class="task-summary has-remaining" onclick="toggleTasks(event,${ev.id})">⚠ 残${remaining}件</span>`;
+    taskSummaryHTML = `<span class="task-summary has-remaining js-toggle-tasks">⚠ 残${remaining}件</span>`;
   }
 
   card.innerHTML = `
-    <div class="event-card-top" onclick="toggleTasks(event,${ev.id})">
+    <div class="event-card-top js-toggle-tasks">
       <div class="event-date-block">
         <div class="event-day-num">${start.getDate()}</div>
         <div class="event-day-dow">${start.getMonth()+1}月 ${DAYS[start.getDay()]}</div>
@@ -967,9 +967,9 @@ function makeEventCard(ev) {
         </div>
         ${ev.memo?`<div style="font-size:10px;color:var(--gray-mid);margin-top:3px">💬 ${ev.memo}</div>`:''}
       </div>
-      <div class="event-actions" onclick="event.stopPropagation()">
-        <button class="ev-btn edit" onclick="openEditModal(${ev.id})">✏️ 編集</button>
-        <button class="ev-btn del" onclick="deleteEvent(${ev.id})">🗑</button>
+      <div class="event-actions">
+        <button class="ev-btn edit js-edit-event">✏️ 編集</button>
+        <button class="ev-btn del js-delete-event">🗑</button>
       </div>
     </div>
     <div class="task-section${activeEventId===ev.id?' open':''}" id="tasks-${ev.id}">
@@ -977,25 +977,40 @@ function makeEventCard(ev) {
         <div class="task-header-label">📋 タスク</div>
       </div>
       <div class="task-presets" id="presets-${ev.id}">
-        ${TASK_PRESETS.map(p=>`<button class="task-preset" onclick="addPreset(event,${ev.id},'${p}')">${p}</button>`).join('')}
+        ${TASK_PRESETS.map(p=>`<button class="task-preset js-add-preset" data-text="${p}">${p}</button>`).join('')}
       </div>
       <div class="task-list" id="tasklist-${ev.id}">
         ${tasks.map(t=>taskItemHTML(ev.id,t)).join('')}
       </div>
       <div class="task-add-row">
-        <input class="task-input" id="tinput-${ev.id}" type="text" placeholder="タスクを自由入力…" onkeydown="if(event.key==='Enter')addFreeTask(${ev.id})">
-        <button class="task-add-btn" onclick="addFreeTask(${ev.id})">追加</button>
+        <input class="task-input js-task-input" type="text" placeholder="タスクを自由入力…">
+        <button class="task-add-btn js-add-free-task">追加</button>
       </div>
     </div>
   `;
+
+  // イベントリスナーをJS側で付ける
+  const eid = ev.id;
+  card.querySelectorAll('.js-toggle-tasks').forEach(el => {
+    el.addEventListener('click', e => { e.stopPropagation(); toggleTasks(e, eid); });
+  });
+  card.querySelector('.event-actions').addEventListener('click', e => e.stopPropagation());
+  card.querySelector('.js-edit-event').addEventListener('click', () => openEditModal(eid));
+  card.querySelector('.js-delete-event').addEventListener('click', () => deleteEvent(eid));
+  card.querySelectorAll('.js-add-preset').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); addPreset(e, eid, btn.dataset.text); });
+  });
+  const taskInput = card.querySelector('.js-task-input');
+  taskInput.addEventListener('keydown', e => { if(e.key==='Enter') addFreeTask(eid, taskInput); });
+  card.querySelector('.js-add-free-task').addEventListener('click', () => addFreeTask(eid, taskInput));
   return card;
 }
 
 function taskItemHTML(eid, t) {
-  return `<div class="task-item${t.done?' done':''}" id="ti-${t.id}">
-    <div class="task-check${t.done?' checked':''}" onclick="toggleTask(${eid},'${t.id}')"></div>
+  return `<div class="task-item${t.done?' done':''}" id="ti-${t.id}" data-eid="${eid}" data-tid="${t.id}">
+    <div class="task-check${t.done?' checked':''} js-toggle-task"></div>
     <div class="task-text">${t.text}</div>
-    <button class="task-del" onclick="delTask(${eid},'${t.id}')">×</button>
+    <button class="task-del js-del-task">×</button>
   </div>`;
 }
 

@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SKZ Schedule</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* === SKZ THEME (default) === */
+    --theme-primary:    #E8365D;
+    --theme-soft:       #F28099;
+    --theme-pale:       #FAD0D8;
+    --theme-ultra:      #FDF0F2;
+    --theme-grad-start: #1A1A1A;
+    --theme-grad-mid:   #2E2E2E;
+    --theme-grad-end:   #E8365D;
+
+    --gray-dark: #2E2E2E;
+    --gray-mid: #7A7A7A;
+    --gray-light: #CCCCCC;
+    --gray-pale: #F4F4F4;
+    --white: #FFFFFF;
+
+    /* カテゴリカラー：色相を均等に分散して見分けやすく */
+    --cat-live:    #E8365D;   /* 赤ピンク */
+    --cat-release: #7C3AED;   /* 紫 */
+    --cat-media:   #0EA5E9;   /* 水色 */
+    --cat-goods:   #D97706;   /* 琥珀 */
+    --cat-apply:   #059669;   /* 緑 */
+    --cat-penmet:  #DB2777;   /* マゼンタ */
+    --cat-birthday:#F97316;   /* オレンジ */
+    --cat-anniv:   #0D9488;   /* ティール */
+    --cat-other:   #6B7280;   /* グレー */
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--gray-pale); color:var(--gray-dark); }
+
+  /* ===== LAYOUT ===== */
+  html, body { height:100%; }
+  .widget { display:grid; grid-template-rows:auto 1fr; height:100vh; }
+
+  .main { display:grid; grid-template-columns:320px 1fr; height:calc(100vh - 64px); overflow:hidden; }
+
+  /* ===== HEADER ===== */
+  .header {
+    background: linear-gradient(135deg, var(--theme-grad-start) 0%, var(--theme-grad-mid) 70%, var(--theme-grad-end) 100%);
+    padding:14px 24px;
+    display:flex; align-items:center; justify-content:space-between;
+    height:64px;
+    position:relative; overflow:hidden;
+  }
+  .header::before {
+    content:''; position:absolute; top:-20px; right:40px;
+    width:90px; height:90px; border-radius:50%;
+    background:rgba(255,255,255,0.1);
+  }
+  .header-title {
+    font-family:'Nunito',sans-serif; font-size:20px; font-weight:900;
+    color:white; display:flex; align-items:center; gap:8px;
+  }
+  .header-sub { font-size:11px; color:rgba(255,255,255,0.8); margin-top:1px; }
+  .add-btn {
+    background:rgba(255,255,255,0.25); border:1.5px solid rgba(255,255,255,0.55);
+    color:white; font-family:'Nunito',sans-serif; font-weight:800; font-size:12px;
+    padding:6px 14px; border-radius:20px; cursor:pointer;
+    backdrop-filter:blur(4px); transition:all .2s; z-index:1;
+  }
+  .add-btn:hover { background:rgba(255,255,255,0.38); transform:translateY(-1px); }
+
+  /* テーマ切替ボタン */
+  .theme-btn {
+    background:rgba(255,255,255,0.15); border:1.5px solid rgba(255,255,255,.35);
+    color:rgba(255,255,255,.85); font-family:'Nunito',sans-serif; font-weight:700;
+    font-size:10px; padding:4px 9px; border-radius:20px; cursor:pointer;
+    transition:all .2s; display:flex; align-items:center; gap:4px;
+  }
+  .theme-btn:hover { background:rgba(255,255,255,.28); }
+  .theme-btn.active { background:rgba(255,255,255,.32); border-color:rgba(255,255,255,.7); color:white; }
+  .theme-swatch { width:8px; height:8px; border-radius:50%; display:inline-block; border:1.5px solid rgba(255,255,255,.5); }
+
+  /* ===== CALENDAR ===== */
+  .cal-panel {
+    background:var(--white);
+    border-right:1.5px solid var(--theme-pale);
+    padding:18px 16px;
+    display:flex; flex-direction:column; gap:14px;
+    overflow-y:auto;
+  }
+
+  .cal-nav { display:flex; align-items:center; justify-content:space-between; gap:4px; }
+  .cal-btn {
+    background:var(--theme-pale); border:none; color:var(--theme-primary);
+    width:28px; height:28px; border-radius:50%; font-size:15px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:all .2s; flex-shrink:0;
+  }
+  .cal-btn:hover { background:var(--theme-soft); }
+  .cal-month { font-family:'Nunito',sans-serif; font-size:15px; font-weight:800; }
+  .today-btn {
+    background:var(--theme-ultra); border:1.5px solid var(--theme-pale);
+    color:var(--theme-primary); font-family:'Nunito',sans-serif; font-weight:800;
+    font-size:10px; padding:3px 8px; border-radius:20px;
+    cursor:pointer; transition:all .2s; white-space:nowrap;
+  }
+  .today-btn:hover { background:var(--theme-pale); }
+
+  /* ===== COUNTDOWN ===== */
+  .countdown-section { display:flex; flex-direction:column; gap:5px; }
+  .countdown-title {
+    font-family:'Nunito',sans-serif; font-size:10px; font-weight:800;
+    text-transform:uppercase; letter-spacing:1.2px; color:var(--gray-mid);
+    margin-bottom:2px;
+  }
+  .countdown-item {
+    background:var(--theme-ultra); border:1.5px solid var(--theme-pale);
+    border-radius:10px; padding:7px 9px;
+    display:flex; align-items:center; gap:8px;
+    cursor:pointer; transition:all .15s;
+  }
+  .countdown-item:hover { background:var(--theme-pale); }
+  .countdown-days-block {
+    min-width:46px; text-align:center;
+    background:var(--theme-primary);
+    border-radius:8px; padding:5px 4px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .countdown-days {
+    font-family:'Nunito',sans-serif; font-size:22px; font-weight:900;
+    color:white; line-height:1;
+  }
+  .countdown-days-unit { font-size:8px; font-weight:800; color:rgba(255,255,255,.75); display:block; text-align:center; letter-spacing:.5px; }
+  .countdown-info { flex:1; min-width:0; }
+  .countdown-name { font-family:'Nunito',sans-serif; font-size:11px; font-weight:800; color:var(--gray-dark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .countdown-date { font-size:9px; color:var(--gray-mid); margin-top:1px; }
+  .countdown-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .cal-dow {
+    text-align:center; font-size:9px; font-weight:700;
+    color:var(--gray-mid); padding:3px 0;
+    text-transform:uppercase; letter-spacing:.5px;
+  }
+  .cal-day {
+    aspect-ratio:1; display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    border-radius:8px; font-size:12px; font-weight:600;
+    cursor:pointer; position:relative; transition:all .15s; gap:1px;
+    padding:2px;
+  }
+  .cal-day:hover:not(.empty) { background:var(--theme-ultra); }
+  .cal-day.empty { cursor:default; }
+  .cal-day.today { background:var(--theme-primary); color:white; }
+  .cal-day.selected { background:var(--theme-pale); color:var(--theme-primary); }
+  .cal-day.today.selected { background:var(--theme-primary); color:white; }
+
+  /* birthday/anniv highlight ring */
+  .cal-day.has-special { position:relative; }
+  .cal-day.has-special .day-num { 
+    background:var(--theme-ultra);
+    border-radius:50%; width:22px; height:22px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px;
+  }
+  .cal-day.today .day-num { background:transparent !important; }
+
+  .dot-row { display:flex; gap:2px; justify-content:center; flex-wrap:wrap; }
+  .dot { width:4px; height:4px; border-radius:50%; }
+  .cal-day.today .dot { background:rgba(255,255,255,.8) !important; }
+
+  /* task badge on calendar */
+  .task-badge {
+    position:absolute; top:1px; right:1px;
+    background:#EF4444; color:white;
+    font-size:8px; font-weight:800;
+    width:13px; height:13px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    line-height:1;
+  }
+  .task-badge.done { background:#10B981; }
+
+  /* special emoji on cal */
+  .special-emoji { font-size:9px; line-height:1; }
+
+  /* legend */
+  .legend { display:flex; flex-wrap:wrap; gap:5px; }
+  .legend-item { display:flex; align-items:center; gap:3px; font-size:9px; color:var(--gray-mid); font-weight:600; }
+  .legend-dot { width:6px; height:6px; border-radius:50%; }
+
+  /* ===== RIGHT PANEL ===== */
+  .right-panel {
+    display:grid; grid-template-rows:1fr auto;
+    overflow:hidden;
+  }
+
+  .list-panel {
+    padding:18px 20px;
+    overflow-y:auto;
+    display:flex; flex-direction:column; gap:16px;
+  }
+
+  .section-label {
+    font-family:'Nunito',sans-serif; font-size:10px; font-weight:800;
+    text-transform:uppercase; letter-spacing:1.5px;
+    color:var(--gray-mid); margin-bottom:6px;
+  }
+
+  /* event card */
+  .event-card {
+    background:var(--white); border-radius:14px;
+    padding:0; border:1.5px solid transparent;
+    transition:all .2s; cursor:pointer; overflow:hidden;
+  }
+  .event-card:hover { border-color:var(--theme-pale); box-shadow:0 4px 14px rgba(255,107,157,.1); }
+  .event-card.active { border-color:var(--theme-soft); box-shadow:0 4px 14px rgba(255,107,157,.15); }
+
+  .event-card-top {
+    display:flex; gap:12px; align-items:flex-start;
+    padding:12px 14px;
+    border-left:4px solid transparent;
+    position:relative;
+  }
+  .event-card.live .event-card-top { border-left-color:var(--cat-live); }
+  .event-card.release .event-card-top { border-left-color:var(--cat-release); }
+  .event-card.media .event-card-top { border-left-color:var(--cat-media); }
+  .event-card.goods .event-card-top { border-left-color:var(--cat-goods); }
+  .event-card.apply .event-card-top { border-left-color:var(--cat-apply); }
+  .event-card.penmet .event-card-top { border-left-color:var(--cat-penmet); }
+  .event-card.other .event-card-top { border-left-color:var(--cat-other); }
+
+  .event-date-block { min-width:40px; text-align:center; }
+  .event-day-num { font-family:'Nunito',sans-serif; font-size:22px; font-weight:900; line-height:1; }
+  .event-day-dow { font-size:9px; font-weight:700; color:var(--gray-mid); text-transform:uppercase; }
+
+  .event-info { flex:1; min-width:0; }
+  .event-name { font-family:'Nunito',sans-serif; font-size:13px; font-weight:800; margin-bottom:4px; }
+  .event-meta { display:flex; flex-wrap:wrap; gap:5px; align-items:center; }
+
+  .tag {
+    font-size:9px; font-weight:700; padding:2px 7px; border-radius:20px;
+    display:flex; align-items:center; gap:2px;
+  }
+  .tag.live { background:#FFE0EC; color:var(--cat-live); }
+  .tag.release { background:#F3E8FF; color:var(--cat-release); }
+  .tag.media { background:#DBEAFE; color:var(--cat-media); }
+  .tag.goods { background:#FEF3C7; color:var(--cat-goods); }
+  .tag.apply { background:#FEE2E2; color:var(--cat-apply); }
+  .tag.penmet { background:#FCE7F3; color:var(--cat-penmet); }
+  .tag.other { background:#F3F4F6; color:var(--cat-other); }
+
+  .countdown-chip {
+    background:var(--theme-pale); color:var(--theme-primary);
+    font-family:'Nunito',sans-serif; font-size:10px; font-weight:800;
+    padding:2px 8px; border-radius:20px;
+  }
+  .deadline-red { background:#FEF2F2; color:#EF4444; border:1px solid #FEE2E2; font-size:9px; font-weight:800; padding:2px 7px; border-radius:20px; }
+  .deadline-warn { background:#FFFBEB; color:#F59E0B; border:1px solid #FDE68A; font-size:9px; font-weight:800; padding:2px 7px; border-radius:20px; }
+
+  /* task summary on card */
+  .task-summary {
+    display:flex; align-items:center; gap:4px;
+    font-size:10px; font-weight:700;
+  }
+  .task-summary.all-done { color:#10B981; }
+  .task-summary.has-remaining { color:#EF4444; }
+  .task-summary.no-tasks { color:var(--gray-light); }
+
+  /* task section inside card */
+  .task-section {
+    border-top:1px solid var(--theme-pale);
+    padding:10px 14px;
+    display:none;
+  }
+  .task-section.open { display:block; }
+
+  .task-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:8px;
+  }
+  .task-header-label { font-size:10px; font-weight:700; color:var(--gray-mid); text-transform:uppercase; letter-spacing:.8px; }
+
+  .task-list { display:flex; flex-direction:column; gap:5px; margin-bottom:8px; }
+  .task-item {
+    display:flex; align-items:center; gap:8px;
+    padding:6px 8px; border-radius:8px;
+    background:var(--gray-pale); transition:background .15s;
+  }
+  .task-item:hover { background:var(--theme-ultra); }
+  .task-check {
+    width:16px; height:16px; border-radius:5px;
+    border:2px solid var(--gray-light);
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; transition:all .15s;
+    background:white;
+  }
+  .task-check.checked { background:var(--theme-primary); border-color:var(--theme-primary); }
+  .task-check.checked::after { content:'✓'; color:white; font-size:10px; font-weight:800; }
+  .task-text { font-size:12px; font-weight:500; flex:1; }
+  .task-item.done .task-text { text-decoration:line-through; color:var(--gray-light); }
+  .task-del {
+    background:none; border:none; color:var(--gray-light);
+    font-size:14px; cursor:pointer; padding:0 2px;
+    line-height:1; transition:color .15s;
+  }
+  .task-del:hover { color:#EF4444; }
+
+  .task-add-row { display:flex; gap:6px; }
+  .task-presets { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px; }
+  .task-preset {
+    font-size:10px; padding:3px 9px; border-radius:20px;
+    background:var(--theme-pale); color:var(--theme-primary);
+    font-weight:700; cursor:pointer; border:none;
+    transition:all .15s;
+  }
+  .task-preset:hover { background:var(--theme-soft); }
+  .task-input {
+    flex:1; border:1.5px solid var(--gray-light); border-radius:8px;
+    padding:5px 10px; font-family:'DM Sans',sans-serif; font-size:12px;
+    outline:none; transition:border-color .2s;
+  }
+  .task-input:focus { border-color:var(--theme-primary); }
+  .task-add-btn {
+    background:var(--theme-primary); border:none; color:white;
+    font-family:'Nunito',sans-serif; font-weight:800; font-size:12px;
+    padding:5px 12px; border-radius:8px; cursor:pointer;
+    transition:all .2s;
+  }
+  .task-add-btn:hover { background:var(--theme-primary); }
+
+  /* special day cards (birthday/anniv) */
+  .special-card {
+    background:linear-gradient(135deg,#FFF5F9,#FFE8F4);
+    border:1.5px solid var(--theme-pale);
+    border-radius:14px; padding:10px 14px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .special-card .s-emoji { font-size:24px; }
+  .special-card .s-name { font-family:'Nunito',sans-serif; font-size:13px; font-weight:800; }
+  .special-card .s-sub { font-size:10px; color:var(--gray-mid); margin-top:2px; }
+
+  /* empty state */
+  .empty-state { text-align:center; padding:30px; color:var(--gray-light); }
+  .empty-state .e-emoji { font-size:32px; margin-bottom:8px; }
+  .empty-state p { font-size:12px; }
+
+  /* ===== MODAL ===== */
+  .overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,.35); backdrop-filter:blur(3px);
+    z-index:200; align-items:center; justify-content:center;
+  }
+  .overlay.open { display:flex; }
+  .modal {
+    background:white; border-radius:20px; padding:24px;
+    width:420px; max-width:95vw; max-height:90vh; overflow-y:auto;
+    box-shadow:0 20px 60px rgba(255,107,157,.2);
+    animation:mIn .25s ease;
+  }
+  @keyframes mIn { from{transform:scale(.92) translateY(8px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+  .modal-title { font-family:'Nunito',sans-serif; font-size:17px; font-weight:900; margin-bottom:18px; }
+  .fg { margin-bottom:12px; }
+  .fl { font-size:10px; font-weight:700; color:var(--gray-mid); text-transform:uppercase; letter-spacing:.8px; display:block; margin-bottom:4px; }
+  .fi {
+    width:100%; border:1.5px solid var(--gray-light); border-radius:9px;
+    padding:8px 11px; font-family:'DM Sans',sans-serif; font-size:13px;
+    color:var(--gray-dark); outline:none; transition:border-color .2s;
+  }
+  .fi:focus { border-color:var(--theme-primary); }
+  .frow { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  .cat-grid { display:flex; flex-wrap:wrap; gap:6px; }
+  .cat-opt {
+    padding:4px 10px; border-radius:20px; font-size:10px; font-weight:700;
+    cursor:pointer; border:1.5px solid transparent; opacity:.55; transition:all .15s;
+  }
+  .cat-opt.sel { opacity:1; border-color:currentColor; }
+  .cat-opt.live { background:#FFE0EC; color:var(--cat-live); }
+  .cat-opt.release { background:#F3E8FF; color:var(--cat-release); }
+  .cat-opt.media { background:#DBEAFE; color:var(--cat-media); }
+  .cat-opt.goods { background:#FEF3C7; color:var(--cat-goods); }
+  .cat-opt.apply { background:#FEE2E2; color:var(--cat-apply); }
+  .cat-opt.penmet { background:#FCE7F3; color:var(--cat-penmet); }
+  .cat-opt.other { background:#F3F4F6; color:var(--cat-other); }
+
+  .m-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
+  .btn-cancel { background:var(--gray-pale); border:none; color:var(--gray-mid); font-family:'Nunito',sans-serif; font-weight:700; font-size:12px; padding:8px 16px; border-radius:9px; cursor:pointer; }
+  .btn-save { background:var(--theme-primary); border:none; color:white; font-family:'Nunito',sans-serif; font-weight:800; font-size:12px; padding:8px 20px; border-radius:9px; cursor:pointer; transition:all .2s; }
+  .btn-save:hover { background:var(--theme-primary); transform:translateY(-1px); }
+
+  /* ===== イベント操作ボタン ===== */
+  .event-actions {
+    display:flex; gap:5px; margin-left:auto; flex-shrink:0;
+  }
+  .ev-btn {
+    background:none; border:1.5px solid var(--gray-light);
+    border-radius:8px; padding:3px 8px; font-size:10px; font-weight:700;
+    cursor:pointer; transition:all .15s; color:var(--gray-mid);
+    display:flex; align-items:center; gap:3px;
+  }
+  .ev-btn.edit:hover { border-color:var(--theme-primary); color:var(--theme-primary); background:var(--theme-ultra); }
+  .ev-btn.del:hover { border-color:#EF4444; color:#EF4444; background:#FEF2F2; }
+
+  /* ===== スマホ対応 ===== */
+  @media (max-width: 680px) {
+    .header { padding:10px 14px; height:auto; flex-wrap:wrap; gap:8px; }
+    .header-title { font-size:16px; }
+    .header-sub { display:none; }
+    .theme-btn { font-size:9px; padding:3px 7px; }
+    .add-btn { font-size:11px; padding:5px 11px; }
+
+    .main { grid-template-columns:1fr; grid-template-rows:auto 1fr; height:auto; overflow:visible; }
+
+    .cal-panel {
+      border-right:none; border-bottom:1.5px solid var(--theme-pale);
+      padding:12px; gap:10px;
+    }
+    .cal-day { font-size:11px; }
+
+    .countdown-section { display:none; } /* スマホではカウントダウン非表示（右パネルに集約） */
+
+    .right-panel { grid-template-rows:1fr; height:auto; }
+    .list-panel { padding:12px 14px; }
+
+    .widget { height:auto; }
+    html, body { height:auto; overflow:auto; }
+
+    /* スマホ用ナビゲーションタブ */
+    .mobile-tabs {
+      display:flex; background:white;
+      border-bottom:1.5px solid var(--theme-pale);
+      position:sticky; top:0; z-index:10;
+    }
+    .mobile-tab {
+      flex:1; padding:10px; text-align:center;
+      font-family:'Nunito',sans-serif; font-size:11px; font-weight:800;
+      color:var(--gray-mid); border:none; background:none; cursor:pointer;
+      border-bottom:2.5px solid transparent; transition:all .2s;
+    }
+    .mobile-tab.active { color:var(--theme-primary); border-bottom-color:var(--theme-primary); }
+
+    .main.show-list .cal-panel { display:none; }
+    .main.show-cal .right-panel { display:none; }
+  }
+
+  @media (min-width: 681px) {
+    .mobile-tabs { display:none; }
+  }
+
+  /* ローディングバー */
+  #loading-bar {
+    display:none; position:fixed; top:0; left:0; right:0;
+    height:3px; background:linear-gradient(90deg, var(--theme-primary), var(--theme-soft));
+    z-index:999; animation:loadingSlide 1.2s ease-in-out infinite;
+  }
+  @keyframes loadingSlide {
+    0% { transform:translateX(-100%); }
+    100% { transform:translateX(100%); }
+  }
+
+  /* トースト通知 */
+  .toast {
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:#2E2E2E; color:white;
+    font-family:'Nunito',sans-serif; font-size:13px; font-weight:700;
+    padding:10px 20px; border-radius:20px;
+    opacity:0; transition:opacity .3s;
+    z-index:999; pointer-events:none; white-space:nowrap;
+    box-shadow:0 4px 16px rgba(0,0,0,.2);
+  }
+  .toast.error { background:#EF4444; }
+</style>
+</head>
+<body>
+<div id="loading-bar"></div>
+<div id="toast" class="toast"></div>
+<div class="widget">
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="header-title">🧭 SKZ Schedule</div>
+      <div class="header-sub">Stray Kids スケジュール＆タスク管理</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;z-index:1">
+      <!-- テーマ切替 -->
+      <div style="display:flex;gap:4px;align-items:center">
+        <span style="font-size:10px;color:rgba(255,255,255,.75);font-weight:700;margin-right:2px">🎨</span>
+        <button class="theme-btn active" id="theme-skz" title="SKZ（黒×赤）">
+          <span class="theme-swatch" style="background:#E8365D"></span>SKZ
+        </button>
+        <button class="theme-btn" id="theme-custom-btn" title="カスタムカラー">
+          <span class="theme-swatch" id="custom-swatch" style="background:#aaaaaa"></span>カスタム
+        </button>
+      </div>
+      <button class="add-btn" id="btn-add-event">＋ イベント追加</button>
+    </div>
+  </div>
+
+  <!-- スマホ用タブ切替 -->
+  <div class="mobile-tabs">
+    <button class="mobile-tab active" id="tab-cal">📅 カレンダー</button>
+    <button class="mobile-tab" id="tab-list">📋 スケジュール</button>
+  </div>
+
+  <div class="main show-cal" id="main-grid">
+    <!-- CALENDAR -->
+    <div class="cal-panel">
+      <div class="cal-nav">
+        <button class="cal-btn" id="btn-prev-month">‹</button>
+        <div class="cal-month" id="cal-month"></div>
+        <button class="cal-btn" id="btn-next-month">›</button>
+        <button class="today-btn" id="btn-today">今日</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--cat-live)"></div>ライブ</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--cat-release)"></div>リリース</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--cat-media)"></div>配信/メディア</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--cat-goods)"></div>グッズ</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--cat-apply)"></div>申込/手配</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--cat-penmet)"></div>ペンミ</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--cat-birthday)"></div>誕生日/記念日</div>
+      </div>
+      <!-- COUNTDOWN -->
+      <div class="countdown-section">
+        <div class="countdown-title">⏳ カウントダウン</div>
+        <div id="countdown-list"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-panel">
+      <div class="list-panel" id="list-panel"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 削除確認モーダル -->
+<div class="overlay" id="confirm-overlay">
+  <div class="modal" style="max-width:320px;text-align:center">
+    <div style="font-size:32px;margin-bottom:12px">🗑</div>
+    <div style="font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;margin-bottom:6px">イベントを削除する？</div>
+    <div style="font-size:12px;color:var(--gray-mid);margin-bottom:20px">「<span id="confirm-name"></span>」を削除するよ。この操作は取り消せないよ！</div>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn-cancel" id="btn-confirm-cancel">やっぱやめる</button>
+      <button id="btn-confirm-delete" style="background:#EF4444;border:none;color:white;font-family:'Nunito',sans-serif;font-weight:800;font-size:12px;padding:8px 20px;border-radius:9px;cursor:pointer;">削除する</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="color-picker-popup" style="display:none;position:fixed;top:72px;right:16px;z-index:300;
+  background:white;border-radius:16px;padding:18px;width:240px;
+  box-shadow:0 8px 32px rgba(0,0,0,.18);border:1.5px solid #eee;
+  animation:mIn .2s ease;">
+  <div style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;color:#2E2E2E;margin-bottom:12px">🎨 カスタムテーマ</div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div>
+      <label style="font-size:10px;font-weight:700;color:#7A7A7A;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:4px">メインカラー</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="color" id="cp-primary" value="#FF6B9D"
+          style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px;background:#f4f4f4">
+        <input type="text" id="cp-primary-text" value="#FF6B9D"
+          style="flex:1;border:1.5px solid #ddd;border-radius:8px;padding:6px 10px;
+          font-family:'DM Sans',sans-serif;font-size:13px;outline:none;text-transform:uppercase"
+          placeholder="#FF6B9D">
+      </div>
+    </div>
+    <div>
+      <label style="font-size:10px;font-weight:700;color:#7A7A7A;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:4px">サブカラー（任意）</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="color" id="cp-secondary" value="#FFB3CC"
+          style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px;background:#f4f4f4"
+          oninput="previewCustomTheme()">
+        <input type="text" id="cp-secondary-text" value="#FFB3CC"
+          style="flex:1;border:1.5px solid #ddd;border-radius:8px;padding:6px 10px;
+          font-family:'DM Sans',sans-serif;font-size:13px;outline:none;text-transform:uppercase"
+          oninput="syncColorInput('secondary')" placeholder="#FFB3CC">
+      </div>
+    </div>
+    <div style="font-size:10px;color:#aaa;margin-top:-4px">サブカラーを省略するとメインカラーから自動生成するよ</div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <button id="btn-cp-cancel"
+      style="flex:1;background:#f4f4f4;border:none;border-radius:8px;padding:8px;
+      font-family:'Nunito',sans-serif;font-weight:700;font-size:12px;color:#7A7A7A;cursor:pointer">
+      キャンセル
+    </button>
+    <button id="btn-cp-apply"
+      style="flex:1;background:var(--theme-primary);border:none;border-radius:8px;padding:8px;
+      font-family:'Nunito',sans-serif;font-weight:800;font-size:12px;color:white;cursor:pointer;transition:opacity .2s">
+      適用する
+    </button>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">🧭 イベントを追加</div>
+    <input type="hidden" id="f-edit-id" value="">
+    <div class="fg">
+      <label class="fl">イベント名</label>
+      <input class="fi" id="f-name" type="text" placeholder="例: MANIAC WORLD TOUR TOKYO">
+    </div>
+    <div class="fg">
+      <label class="fl">カテゴリ</label>
+      <div class="cat-grid">
+        <div class="cat-opt live" data-cat="live">🎤 ライブ</div>
+        <div class="cat-opt release" data-cat="release">💿 リリース</div>
+        <div class="cat-opt media" data-cat="media">📺 配信/メディア</div>
+        <div class="cat-opt goods" data-cat="goods">🛍 グッズ</div>
+        <div class="cat-opt apply" data-cat="apply">🎫 申込/手配</div>
+        <div class="cat-opt penmet" data-cat="penmet">💌 ペンミ</div>
+        <div class="cat-opt other" data-cat="other">✨ その他</div>
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">開始日</label><input class="fi" id="f-start" type="date"></div>
+      <div class="fg"><label class="fl">終了日（任意）</label><input class="fi" id="f-end" type="date"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">時間（任意）</label><input class="fi" id="f-time" type="time"></div>
+      <div class="fg"><label class="fl">場所（任意）</label><input class="fi" id="f-place" type="text" placeholder="例: 東京ドーム"></div>
+    </div>
+    <div class="fg"><label class="fl">メモ（任意）</label><input class="fi" id="f-memo" type="text" placeholder="例: チケット当選！"></div>
+    <div class="m-actions">
+      <button class="btn-cancel" id="btn-modal-cancel">キャンセル</button>
+      <button class="btn-save" id="btn-save-label">保存する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== FIXED SPECIAL DAYS =====
+// 毎年繰り返し
+const SPECIALS = [
+  // メンバー誕生日
+  { month:10, day:3,  label:'バンチャン🐺 🎂', sub:'1997.10.03', type:'birthday' },
+  { month:10, day:23, label:'リノ🐰 🎂',       sub:'1998.10.23', type:'birthday' },
+  { month:8,  day:17, label:'チャンビン🐖🐇 🎂',sub:'1999.08.17', type:'birthday' },
+  { month:3,  day:20, label:'ヒョンジン🥟 🎂', sub:'2000.03.20', type:'birthday' },
+  { month:9,  day:14, label:'ハン🐿 🎂',       sub:'2000.09.14', type:'birthday' },
+  { month:9,  day:15, label:'フィリックス🐥 🎂',sub:'2000.09.15', type:'birthday' },
+  { month:9,  day:22, label:'スンミン🐶 🎂',   sub:'2000.09.22', type:'birthday' },
+  { month:2,  day:8,  label:'アイエン🦊 🎂',   sub:'2001.02.08', type:'birthday' },
+  // 記念日
+  { month:3,  day:25, label:'Stray Kids デビュー記念日 🎊', sub:'2018.03.25', type:'anniv' },
+  { month:8,  day:1,  label:'STAY 誕生日 💚', sub:'2018.08.01', type:'anniv' },
+];
+
+function getSpecialsForDate(month1, day) {
+  return SPECIALS.filter(s => s.month === month1 && s.day === day);
+}
+
+// ===== SUPABASE 設定 =====
+// ↓ここに自分のProject URLとanon keyを入れてね
+const SUPABASE_URL = 'ここにProject URLを入れる';
+const SUPABASE_KEY = 'ここにanon keyを入れる';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ===== EVENTS（メモリキャッシュ） =====
+let events = [];
+
+// ===== STATE =====
+let currentDate = new Date();
+let selectedDate = null;
+let activeEventId = null;
+let isLoading = false;
+
+const TASK_PRESETS = ['チケット申込','チケット購入','交通手配','ホテル手配','グッズチェック','予算確認','購入','持ち物準備'];
+const DAYS = ['日','月','火','水','木','金','土'];
+const CAT_LABELS = { live:'🎤 ライブ', release:'💿 リリース', media:'📺 配信/メディア', goods:'🛍 グッズ', apply:'🎫 申込/手配', penmet:'💌 ペンミ', other:'✨ その他' };
+
+// ===== データ読み込み =====
+async function loadData() {
+  setLoading(true);
+  try {
+    // イベント取得
+    const { data: evData, error: evErr } = await supabase
+      .from('skz_events')
+      .select('*')
+      .order('start_date', { ascending: true });
+    if (evErr) throw evErr;
+
+    // タスク取得
+    const { data: taskData, error: taskErr } = await supabase
+      .from('skz_tasks')
+      .select('*')
+      .order('created_at', { ascending: true });
+    if (taskErr) throw taskErr;
+
+    // タスクをイベントに紐づけてeventsに格納
+    events = (evData || []).map(ev => ({
+      id: ev.id,
+      name: ev.name,
+      cat: ev.cat,
+      start: new Date(ev.start_date + 'T00:00:00'),
+      end: ev.end_date ? new Date(ev.end_date + 'T00:00:00') : null,
+      time: ev.time,
+      place: ev.place,
+      memo: ev.memo || '',
+      tasks: (taskData || [])
+        .filter(t => t.event_id === ev.id)
+        .map(t => ({ id: t.id, text: t.text, done: t.done })),
+    }));
+  } catch(e) {
+    console.error('データ読み込みエラー:', e);
+    showToast('データの読み込みに失敗したよ😢', 'error');
+  }
+  setLoading(false);
+  renderCalendar(); renderList(); renderCountdown();
+}
+
+function setLoading(flag) {
+  isLoading = flag;
+  const el = document.getElementById('loading-bar');
+  if (el) el.style.display = flag ? 'block' : 'none';
+}
+
+function showToast(msg, type='success') {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.className = 'toast ' + type;
+  toast.style.opacity = '1';
+  setTimeout(() => { toast.style.opacity = '0'; }, 2800);
+}
+
+// ===== CALENDAR =====
+function renderCalendar() {
+  const cy = currentDate.getFullYear();
+  const cm = currentDate.getMonth();
+  document.getElementById('cal-month').textContent = `${cy}年${cm+1}月`;
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  ['日','月','火','水','木','金','土'].forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-dow'; el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const firstDay = new Date(cy, cm, 1).getDay();
+  const daysInMonth = new Date(cy, cm+1, 0).getDate();
+  const today = new Date();
+
+  for (let i = 0; i < firstDay; i++) {
+    const el = document.createElement('div'); el.className = 'cal-day empty';
+    grid.appendChild(el);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(cy, cm, d);
+    const dayEvs = getEventsForDate(date);
+    const specials = getSpecialsForDate(cm+1, d);
+    const isToday = today.getFullYear()===cy && today.getMonth()===cm && today.getDate()===d;
+    const isSel = selectedDate && selectedDate.getFullYear()===cy && selectedDate.getMonth()===cm && selectedDate.getDate()===d;
+
+    const el = document.createElement('div');
+    let cls = 'cal-day';
+    if (isToday) cls += ' today';
+    if (isSel) cls += ' selected';
+    if (dayEvs.length || specials.length) cls += ' has-event';
+    if (specials.length) cls += ' has-special';
+    el.className = cls;
+
+    const num = document.createElement('div');
+    num.className = 'day-num'; num.textContent = d;
+    el.appendChild(num);
+
+    // dots（ドット＋特別日絵文字）
+    const dotsRow = document.createElement('div');
+    dotsRow.className = 'dot-row';
+    [...new Set(dayEvs.map(e=>e.cat))].slice(0,3).forEach(cat => {
+      const dot = document.createElement('div');
+      dot.className = `dot ${cat}`; dotsRow.appendChild(dot);
+    });
+    if (specials.length) {
+      const dot = document.createElement('div');
+      dot.className = 'dot'; dot.style.background = 'var(--cat-birthday)';
+      dotsRow.appendChild(dot);
+    }
+    if (dotsRow.children.length > 0) el.appendChild(dotsRow);
+
+    // 特別日で通常イベントがない場合は絵文字表示
+    if (specials.length > 0 && dayEvs.length === 0) {
+      const sp = document.createElement('div');
+      sp.className = 'special-emoji';
+      sp.textContent = specials[0].type==='birthday' ? '🎂' : '🎊';
+      el.appendChild(sp);
+    }
+
+    // タスクバッジ（その日が開始日のイベントのみ対象にする）
+    const evStartingToday = events.filter(e => {
+      const s = new Date(e.start);
+      return s.getFullYear()===cy && s.getMonth()===cm && s.getDate()===d;
+    }).filter(e => e.tasks && e.tasks.length > 0);
+
+    if (evStartingToday.length > 0) {
+      const remaining = evStartingToday.reduce((a,e) => a + e.tasks.filter(t=>!t.done).length, 0);
+      const badge = document.createElement('div');
+      badge.className = 'task-badge' + (remaining===0 ? ' done' : '');
+      badge.textContent = remaining===0 ? '✓' : remaining;
+      el.appendChild(badge);
+    }
+
+    el.onclick = () => { selectedDate = date; renderCalendar(); renderList(); };
+    grid.appendChild(el);
+  }
+}
+
+function getEventsForDate(date) {
+  return events.filter(e => {
+    const s = new Date(e.start); s.setHours(0,0,0,0);
+    const end = e.end ? new Date(e.end) : new Date(e.start); end.setHours(23,59,59,999);
+    const d = new Date(date); d.setHours(12,0,0,0);
+    return d >= s && d <= end;
+  });
+}
+
+function changeMonth(dir) {
+  currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth()+dir, 1);
+  renderCalendar(); renderList();
+}
+
+function goToday() {
+  currentDate = new Date();
+  selectedDate = new Date();
+  renderCalendar(); renderList();
+}
+
+// ===== COUNTDOWN =====
+function renderCountdown() {
+  const container = document.getElementById('countdown-list');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  const upcoming = events
+    .filter(e => { const s = new Date(e.start); s.setHours(0,0,0,0); return s >= today; })
+    .sort((a,b) => new Date(a.start) - new Date(b.start))
+    .slice(0, 5);
+
+  if (upcoming.length === 0) {
+    container.innerHTML = `<div style="font-size:10px;color:var(--gray-light);text-align:center;padding:8px">予定がないよ！</div>`;
+    return;
+  }
+
+  upcoming.forEach(ev => {
+    const start = new Date(ev.start); start.setHours(0,0,0,0);
+    const diff = Math.ceil((start - today) / 86400000);
+    const catColors = { live:'var(--cat-live)', release:'var(--cat-release)', media:'var(--cat-media)', goods:'var(--cat-goods)', apply:'var(--cat-apply)', penmet:'var(--cat-penmet)', other:'var(--cat-other)' };
+
+    const item = document.createElement('div');
+    item.className = 'countdown-item';
+    item.innerHTML = `
+      <div class="countdown-days-block">
+        <div class="countdown-days">${diff === 0 ? '🎉' : diff}</div>
+        <div class="countdown-days-unit">${diff === 0 ? 'TODAY' : '日後'}</div>
+      </div>
+      <div class="countdown-dot" style="background:${catColors[ev.cat]||'var(--cat-other)'}"></div>
+      <div class="countdown-info">
+        <div class="countdown-name">${ev.name}</div>
+        <div class="countdown-date">${start.getMonth()+1}/${start.getDate()}（${DAYS[start.getDay()]}）${ev.place ? ' · '+ev.place : ''}</div>
+      </div>
+    `;
+    item.onclick = () => {
+      selectedDate = new Date(ev.start);
+      currentDate = new Date(ev.start.getFullYear(), ev.start.getMonth(), 1);
+      renderCalendar(); renderList();
+    };
+    container.appendChild(item);
+  });
+}
+
+// ===== LIST =====
+function renderList() {
+  const panel = document.getElementById('list-panel');
+  panel.innerHTML = '';
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // 選択日
+  if (selectedDate) {
+    const sd = selectedDate;
+    const dayEvs = getEventsForDate(sd);
+    const specials = getSpecialsForDate(sd.getMonth()+1, sd.getDate());
+
+    const lbl = document.createElement('div');
+    lbl.className = 'section-label';
+    lbl.textContent = `${sd.getMonth()+1}月${sd.getDate()}日（${DAYS[sd.getDay()]}）`;
+    panel.appendChild(lbl);
+
+    specials.forEach(s => panel.appendChild(makeSpecialCard(s)));
+    if (dayEvs.length===0 && specials.length===0) panel.appendChild(emptyState('この日の予定はなし'));
+    dayEvs.forEach(e => panel.appendChild(makeEventCard(e)));
+
+    const div = document.createElement('div');
+    div.style.cssText = 'border-top:1px solid var(--theme-pale);margin:4px 0';
+    panel.appendChild(div);
+  }
+
+  // 今後の予定
+  const upcoming = events
+    .filter(e => { const s=new Date(e.start); s.setHours(0,0,0,0); return s>=today; })
+    .sort((a,b)=>new Date(a.start)-new Date(b.start));
+
+  const lbl2 = document.createElement('div');
+  lbl2.className = 'section-label'; lbl2.textContent = '今後の予定';
+  panel.appendChild(lbl2);
+
+  if (upcoming.length===0) panel.appendChild(emptyState('イベントを追加してみよう！'));
+  else upcoming.slice(0,10).forEach(e => panel.appendChild(makeEventCard(e)));
+}
+
+function makeSpecialCard(s) {
+  const card = document.createElement('div');
+  card.className = 'special-card';
+  card.innerHTML = `
+    <div class="s-emoji">${s.type==='birthday'?'🎂':'🎊'}</div>
+    <div><div class="s-name">${s.label}</div><div class="s-sub">${s.sub}</div></div>
+  `;
+  return card;
+}
+
+function makeEventCard(ev) {
+  const card = document.createElement('div');
+  card.className = `event-card ${ev.cat}${activeEventId===ev.id?' active':''}`;
+  card.id = `card-${ev.id}`;
+
+  const start = new Date(ev.start);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.ceil((new Date(ev.start).setHours(0,0,0,0) - today) / 86400000);
+
+  const tasks = ev.tasks || [];
+  const done = tasks.filter(t=>t.done).length;
+  const remaining = tasks.length - done;
+
+  let taskSummaryHTML = '';
+  if (tasks.length===0) {
+    taskSummaryHTML = `<span class="task-summary no-tasks" onclick="toggleTasks(event,${ev.id})">＋ タスク追加</span>`;
+  } else if (remaining===0) {
+    taskSummaryHTML = `<span class="task-summary all-done" onclick="toggleTasks(event,${ev.id})">✓ すべて完了！</span>`;
+  } else {
+    taskSummaryHTML = `<span class="task-summary has-remaining" onclick="toggleTasks(event,${ev.id})">⚠ 残${remaining}件</span>`;
+  }
+
+  card.innerHTML = `
+    <div class="event-card-top" onclick="toggleTasks(event,${ev.id})">
+      <div class="event-date-block">
+        <div class="event-day-num">${start.getDate()}</div>
+        <div class="event-day-dow">${start.getMonth()+1}月 ${DAYS[start.getDay()]}</div>
+      </div>
+      <div class="event-info">
+        <div class="event-name">${ev.name}</div>
+        <div class="event-meta">
+          <span class="tag ${ev.cat}">${CAT_LABELS[ev.cat]||ev.cat}</span>
+          ${ev.time?`<span style="font-size:10px;color:var(--gray-mid)">🕐 ${ev.time}</span>`:''}
+          ${ev.place?`<span style="font-size:10px;color:var(--gray-mid)">📍 ${ev.place}</span>`:''}
+          ${diff===0?'<span class="countdown-chip">TODAY 🎉</span>':diff>0&&diff<=30?`<span class="countdown-chip">あと${diff}日</span>`:''}
+          ${ev.cat==='goods'&&ev.end?deadlineBadge(ev.end):''}
+          ${taskSummaryHTML}
+        </div>
+        ${ev.memo?`<div style="font-size:10px;color:var(--gray-mid);margin-top:3px">💬 ${ev.memo}</div>`:''}
+      </div>
+      <div class="event-actions" onclick="event.stopPropagation()">
+        <button class="ev-btn edit" onclick="openEditModal(${ev.id})">✏️ 編集</button>
+        <button class="ev-btn del" onclick="deleteEvent(${ev.id})">🗑</button>
+      </div>
+    </div>
+    <div class="task-section${activeEventId===ev.id?' open':''}" id="tasks-${ev.id}">
+      <div class="task-header">
+        <div class="task-header-label">📋 タスク</div>
+      </div>
+      <div class="task-presets" id="presets-${ev.id}">
+        ${TASK_PRESETS.map(p=>`<button class="task-preset" onclick="addPreset(event,${ev.id},'${p}')">${p}</button>`).join('')}
+      </div>
+      <div class="task-list" id="tasklist-${ev.id}">
+        ${tasks.map(t=>taskItemHTML(ev.id,t)).join('')}
+      </div>
+      <div class="task-add-row">
+        <input class="task-input" id="tinput-${ev.id}" type="text" placeholder="タスクを自由入力…" onkeydown="if(event.key==='Enter')addFreeTask(${ev.id})">
+        <button class="task-add-btn" onclick="addFreeTask(${ev.id})">追加</button>
+      </div>
+    </div>
+  `;
+  return card;
+}
+
+function taskItemHTML(eid, t) {
+  return `<div class="task-item${t.done?' done':''}" id="ti-${t.id}">
+    <div class="task-check${t.done?' checked':''}" onclick="toggleTask(${eid},'${t.id}')"></div>
+    <div class="task-text">${t.text}</div>
+    <button class="task-del" onclick="delTask(${eid},'${t.id}')">×</button>
+  </div>`;
+}
+
+function toggleTasks(e, eid) {
+  e.stopPropagation();
+  activeEventId = activeEventId===eid ? null : eid;
+  renderList();
+  // カレンダーのバッジも更新
+  renderCalendar();
+}
+
+async function toggleTask(eid, tid) {
+  const ev = events.find(e=>e.id===eid);
+  if (!ev) return;
+  const t = ev.tasks.find(t=>t.id===tid);
+  if (!t) return;
+  const newDone = !t.done;
+  try {
+    const { error } = await db.from('skz_tasks').update({ done: newDone }).eq('id', tid);
+    if (error) throw error;
+    t.done = newDone;
+    renderList(); renderCalendar();
+  } catch(e) { console.error(e); showToast('更新に失敗したよ😢','error'); }
+}
+
+async function delTask(eid, tid) {
+  try {
+    const { error } = await db.from('skz_tasks').delete().eq('id', tid);
+    if (error) throw error;
+    const ev = events.find(e=>e.id===eid);
+    if (ev) ev.tasks = ev.tasks.filter(t=>t.id!==tid);
+    renderList(); renderCalendar();
+  } catch(e) { console.error(e); showToast('削除に失敗したよ😢','error'); }
+}
+
+async function addPreset(e, eid, text) {
+  e.stopPropagation();
+  const ev = events.find(e=>e.id===eid);
+  if (!ev || ev.tasks.some(t=>t.text===text)) return;
+  try {
+    const { data, error } = await db.from('skz_tasks').insert({ event_id: eid, text, done: false }).select().single();
+    if (error) throw error;
+    ev.tasks.push({ id: data.id, text: data.text, done: data.done });
+    renderList(); renderCalendar();
+  } catch(e) { console.error(e); showToast('追加に失敗したよ😢','error'); }
+}
+
+async function addFreeTask(eid) {
+  const input = document.getElementById(`tinput-${eid}`);
+  const text = input.value.trim();
+  if (!text) return;
+  const ev = events.find(e=>e.id===eid);
+  if (!ev) return;
+  try {
+    const { data, error } = await db.from('skz_tasks').insert({ event_id: eid, text, done: false }).select().single();
+    if (error) throw error;
+    ev.tasks.push({ id: data.id, text: data.text, done: data.done });
+    input.value = '';
+    renderList(); renderCalendar();
+  } catch(e) { console.error(e); showToast('追加に失敗したよ😢','error'); }
+}
+
+function deadlineBadge(endDate) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const end = new Date(endDate); end.setHours(0,0,0,0);
+  const diff = Math.ceil((end-today)/86400000);
+  if (diff<0) return `<span class="deadline-red">販売終了</span>`;
+  if (diff<=3) return `<span class="deadline-red">⚠ 期限あと${diff}日！</span>`;
+  if (diff<=7) return `<span class="deadline-warn">期限あと${diff}日</span>`;
+  return `<span style="font-size:10px;color:var(--gray-mid)">〜${end.getMonth()+1}/${end.getDate()}まで</span>`;
+}
+
+function emptyState(msg) {
+  const el = document.createElement('div');
+  el.className = 'empty-state';
+  el.innerHTML = `<div class="e-emoji">🩷</div><p>${msg}</p>`;
+  return el;
+}
+
+// ===== MODAL =====
+let selCatVal = null;
+let editingId = null;
+
+function openModal() {
+  editingId = null;
+  document.getElementById('f-edit-id').value = '';
+  document.getElementById('modal-title').textContent = '🧭 イベントを追加';
+  document.getElementById('btn-save-label').textContent = '保存する';
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('f-start').value = new Date().toISOString().split('T')[0];
+  document.getElementById('f-name').focus();
+}
+
+function openEditModal(eid) {
+  const ev = events.find(e=>e.id===eid);
+  if (!ev) return;
+  editingId = eid;
+  document.getElementById('f-edit-id').value = eid;
+  document.getElementById('modal-title').textContent = '✏️ イベントを編集';
+  document.getElementById('btn-save-label').textContent = '更新する';
+
+  document.getElementById('f-name').value = ev.name;
+  document.getElementById('f-start').value = ev.start.toISOString().split('T')[0];
+  document.getElementById('f-end').value = ev.end ? ev.end.toISOString().split('T')[0] : '';
+  document.getElementById('f-time').value = ev.time || '';
+  document.getElementById('f-place').value = ev.place || '';
+  document.getElementById('f-memo').value = ev.memo || '';
+  selCatVal = ev.cat;
+  document.querySelectorAll('.cat-opt').forEach(el=>el.classList.toggle('sel', el.dataset.cat===ev.cat));
+
+  document.getElementById('overlay').classList.add('open');
+}
+
+function deleteEvent(eid) {
+  const ev = events.find(e=>e.id===eid);
+  if (!ev) return;
+  document.getElementById('confirm-name').textContent = ev.name;
+  document.getElementById('confirm-overlay').dataset.eid = eid;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+async function confirmDelete() {
+  const eid = document.getElementById('confirm-overlay').dataset.eid;
+  try {
+    // タスクはon delete cascadeで自動削除される
+    const { error } = await db.from('skz_events').delete().eq('id', eid);
+    if (error) throw error;
+    if (activeEventId===eid) activeEventId = null;
+    closeConfirm();
+    showToast('イベントを削除したよ🗑');
+    await loadData();
+  } catch(e) {
+    console.error(e);
+    showToast('削除に失敗したよ😢', 'error');
+  }
+}
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+}
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+  selCatVal = null;
+  editingId = null;
+  document.querySelectorAll('.cat-opt').forEach(el=>el.classList.remove('sel'));
+  ['f-name','f-end','f-time','f-place','f-memo'].forEach(id=>document.getElementById(id).value='');
+}
+function closeBg(e) { if(e.target.id==='overlay') closeModal(); }
+function selCat(cat) {
+  selCatVal = cat;
+  document.querySelectorAll('.cat-opt').forEach(el=>el.classList.toggle('sel',el.dataset.cat===cat));
+}
+async function saveEvent() {
+  const name = document.getElementById('f-name').value.trim();
+  const startVal = document.getElementById('f-start').value;
+  if (!name || !startVal || !selCatVal) { showToast('イベント名・カテゴリ・開始日は必須だよ！', 'error'); return; }
+  const endVal = document.getElementById('f-end').value;
+  const data = {
+    name, cat: selCatVal,
+    start_date: startVal,
+    end_date: endVal || null,
+    time: document.getElementById('f-time').value || null,
+    place: document.getElementById('f-place').value.trim() || null,
+    memo: document.getElementById('f-memo').value.trim() || null,
+  };
+
+  try {
+    if (editingId !== null) {
+      const { error } = await db.from('skz_events').update(data).eq('id', editingId);
+      if (error) throw error;
+      showToast('イベントを更新したよ✨');
+    } else {
+      const { error } = await db.from('skz_events').insert(data);
+      if (error) throw error;
+      showToast('イベントを追加したよ🎉');
+    }
+    closeModal();
+    await loadData();
+  } catch(e) {
+    console.error(e);
+    showToast('保存に失敗したよ😢', 'error');
+  }
+}
+
+// ===== スマホタブ切替 =====
+function switchTab(tab) {
+  const main = document.getElementById('main-grid');
+  main.className = `main show-${tab}`;
+  document.getElementById('tab-cal').classList.toggle('active', tab==='cal');
+  document.getElementById('tab-list').classList.toggle('active', tab==='list');
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  setTheme('skz');
+  loadData();
+
+  // ヘッダー
+  document.getElementById('btn-add-event').addEventListener('click', openModal);
+  document.getElementById('theme-skz').addEventListener('click', () => setTheme('skz'));
+  document.getElementById('theme-custom-btn').addEventListener('click', toggleColorPicker);
+
+  // カレンダーナビ
+  document.getElementById('btn-prev-month').addEventListener('click', () => changeMonth(-1));
+  document.getElementById('btn-next-month').addEventListener('click', () => changeMonth(1));
+  document.getElementById('btn-today').addEventListener('click', goToday);
+
+  // モーダル
+  document.getElementById('overlay').addEventListener('click', e => { if(e.target.id==='overlay') closeModal(); });
+  document.getElementById('btn-modal-cancel').addEventListener('click', closeModal);
+  document.getElementById('btn-save-label').addEventListener('click', saveEvent);
+
+  // 削除確認モーダル
+  document.getElementById('confirm-overlay').addEventListener('click', e => { if(e.target.id==='confirm-overlay') closeConfirm(); });
+  document.getElementById('btn-confirm-cancel').addEventListener('click', closeConfirm);
+  document.getElementById('btn-confirm-delete').addEventListener('click', confirmDelete);
+
+  // カラーピッカー
+  document.getElementById('btn-cp-cancel').addEventListener('click', closeColorPicker);
+  document.getElementById('btn-cp-apply').addEventListener('click', applyCustomTheme);
+  document.getElementById('cp-primary').addEventListener('input', previewCustomTheme);
+  document.getElementById('cp-secondary').addEventListener('input', previewCustomTheme);
+  document.getElementById('cp-primary-text').addEventListener('input', () => syncColorInput('primary'));
+  document.getElementById('cp-secondary-text').addEventListener('input', () => syncColorInput('secondary'));
+
+  // カテゴリ選択（委任）
+  document.querySelector('.cat-grid').addEventListener('click', e => {
+    const opt = e.target.closest('.cat-opt');
+    if (opt) selCat(opt.dataset.cat);
+  });
+});
+
+// ===== THEME =====
+const THEMES = {
+  skz: {
+    '--theme-primary':    '#E8365D',
+    '--theme-soft':       '#F28099',
+    '--theme-pale':       '#FAD0D8',
+    '--theme-ultra':      '#FDF0F2',
+    '--theme-grad-start': '#1A1A1A',
+    '--theme-grad-mid':   '#2E2E2E',
+    '--theme-grad-end':   '#E8365D',
+  },
+};
+
+function setTheme(name) {
+  const theme = THEMES[name];
+  if (!theme) return;
+  const root = document.documentElement;
+  Object.entries(theme).forEach(([k,v]) => root.style.setProperty(k, v));
+  document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.id === `theme-${name}`);
+  });
+}
+
+// ===== CUSTOM THEME =====
+function toggleColorPicker() {
+  const popup = document.getElementById('color-picker-popup');
+  popup.style.display = popup.style.display === 'none' ? 'block' : 'none';
+}
+function closeColorPicker() {
+  document.getElementById('color-picker-popup').style.display = 'none';
+}
+
+function syncColorInput(type) {
+  // テキスト入力 → カラーピッカーに同期
+  const text = document.getElementById(`cp-${type}-text`).value.trim();
+  if (/^#[0-9A-Fa-f]{6}$/.test(text)) {
+    document.getElementById(`cp-${type}`).value = text;
+    previewCustomTheme();
+  }
+}
+
+function previewCustomTheme() {
+  // カラーピッカー → テキストに同期
+  const primary = document.getElementById('cp-primary').value;
+  const secondary = document.getElementById('cp-secondary').value;
+  document.getElementById('cp-primary-text').value = primary.toUpperCase();
+  document.getElementById('cp-secondary-text').value = secondary.toUpperCase();
+  document.getElementById('custom-swatch').style.background = primary;
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return {r,g,b};
+}
+
+function lighten(hex, amount) {
+  // amount: 0〜1、白に近づける
+  const {r,g,b} = hexToRgb(hex);
+  const lr = Math.round(r + (255-r)*amount);
+  const lg = Math.round(g + (255-g)*amount);
+  const lb = Math.round(b + (255-b)*amount);
+  return `#${lr.toString(16).padStart(2,'0')}${lg.toString(16).padStart(2,'0')}${lb.toString(16).padStart(2,'0')}`;
+}
+
+function applyCustomTheme() {
+  const primary = document.getElementById('cp-primary').value;
+  const secInput = document.getElementById('cp-secondary-text').value.trim();
+  const secondary = /^#[0-9A-Fa-f]{6}$/.test(secInput) ? secInput : lighten(primary, 0.4);
+
+  const root = document.documentElement;
+  root.style.setProperty('--theme-primary',    primary);
+  root.style.setProperty('--theme-soft',       lighten(primary, 0.4));
+  root.style.setProperty('--theme-pale',       lighten(primary, 0.7));
+  root.style.setProperty('--theme-ultra',      lighten(primary, 0.9));
+  root.style.setProperty('--theme-grad-start', primary);
+  root.style.setProperty('--theme-grad-mid',   lighten(primary, 0.2));
+  root.style.setProperty('--theme-grad-end',   secondary);
+
+  document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.id === 'theme-custom-btn');
+  });
+  closeColorPicker();
+}
+</script>
+</body>
+</html>

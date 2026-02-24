@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SKZ Schedule</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -659,7 +659,7 @@ function getSpecialsForDate(month1, day) {
 // ↓ここに自分のProject URLとanon keyを入れてね
 const SUPABASE_URL = 'https://nbduyknklcwqbinvhoih.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iZHV5a25rbGN3cWJpbnZob2loIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NjMzNjUsImV4cCI6MjA4NzIzOTM2NX0.kzZYqBwfc8vpGszN2W3so2jURsZXlrve4KvUydYKIfA';
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ===== EVENTS（メモリキャッシュ） =====
 let events = [];

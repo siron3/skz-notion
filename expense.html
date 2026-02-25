@@ -361,7 +361,8 @@ html, body { height:100%; }
       <div class="fg"><label class="fl">日付</label><input class="fi" id="f-date" type="date"></div>
       <div class="fg">
         <label class="fl">イベント（任意）</label>
-        <input class="fi" id="f-event" type="text" placeholder="例: Japan Tour 大阪">
+        <input class="fi" id="f-event" type="text" list="event-datalist" placeholder="例: Japan Tour 大阪">
+        <datalist id="event-datalist"></datalist>
       </div>
     </div>
     <div class="fg"><label class="fl">メモ（任意）</label><input class="fi" id="f-memo" type="text" placeholder="例: 1次先行"></div>
@@ -684,6 +685,14 @@ function openAddExpense() {
   document.getElementById('f-event').value = '';
   document.getElementById('f-memo').value = '';
   document.querySelectorAll('#expense-cat-grid .cat-opt').forEach(el => el.classList.remove('sel'));
+  // datalistをイベント予算名で更新
+  const dl = document.getElementById('event-datalist');
+  dl.innerHTML = '';
+  budgets.filter(b => b.type === 'event').forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b.label;
+    dl.appendChild(opt);
+  });
   document.getElementById('overlay-expense').classList.add('open');
   document.getElementById('f-name').focus();
 }

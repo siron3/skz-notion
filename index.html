@@ -133,14 +133,14 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   .countdown-date { font-size:9px; color:var(--gray-mid); margin-top:1px; }
   .countdown-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
 
-  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; grid-template-rows:auto repeat(6, 1fr); height:220px; }
   .cal-dow {
     text-align:center; font-size:9px; font-weight:700;
     color:var(--gray-mid); padding:3px 0;
     text-transform:uppercase; letter-spacing:.5px;
   }
   .cal-day {
-    aspect-ratio:1; display:flex; flex-direction:column;
+    display:flex; flex-direction:column;
     align-items:center; justify-content:center;
     border-radius:8px; font-size:12px; font-weight:600;
     cursor:pointer; position:relative; transition:all .15s; gap:1px;
@@ -277,7 +277,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
   .task-header-label { font-size:10px; font-weight:700; color:var(--gray-mid); text-transform:uppercase; letter-spacing:.8px; }
 
-  .task-list { display:flex; flex-direction:column; gap:5px; margin-bottom:8px; }
+  .task-list { display:flex; flex-direction:column; gap:5px; margin-bottom:8px; max-height:180px; overflow-y:auto; }
   .task-item {
     display:flex; align-items:center; gap:8px;
     padding:6px 8px; border-radius:8px;
